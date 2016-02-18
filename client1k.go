@@ -28,7 +28,6 @@ import (
 const (
     protocolAddress = "/42coffeecupfs/e-proxy-voting"
     shellUrl        = "localhost:5001"
-    DaemonPeerID    = "Qmadzj1s8G5a1QkCehucuLuxdNVG8bopRXshdTeGU1SmAg" // PeerID of default ipfs daemon
     encoding        = "json"
 )
 
