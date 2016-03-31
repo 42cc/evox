@@ -26,7 +26,7 @@ import (
 
 const (
     protocolAddress  = "/42coffeecupfs/e-proxy-voting"
-    shellUrl         = "localhost:5001"
+    shellUrl         = "localhost:5401"
     encoding         = "json"
     blacklist        = "blacklist.pub"
     pythonScriptName = "get_list.py"

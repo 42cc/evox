@@ -35,9 +35,12 @@ def get_all_hashes(links):
 
 def add_to_list(api, bulletin_hash):
     peer_id = api.id()['ID']
-
-    path = api.name_resolve(peer_id)['Path']
-    old_hash = re.sub("/ipfs/", "", path)
+    try:
+        with open(settings.LAST_HASH_PATH) as f:
+            old_hash = f.read()
+    except IOError:
+        path = api.name_resolve(peer_id)['Path']
+        old_hash = re.sub("/ipfs/", "", path)
 
     data = get_current_list_or_create_new(api, old_hash)
 
@@ -79,7 +82,7 @@ def check_user(api, user, bulletin_hash):
 
 
 def main():
-    api = ipfsApi.Client('127.0.0.1', 5001)
+    api = ipfsApi.Client('127.0.0.1', 5401)
     args = parse_arguments(sys.argv[1:])
     # TODO: uncommit in ticket:15
     # check_user(api, args.user, args.bulletin)

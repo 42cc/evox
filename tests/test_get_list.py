@@ -11,6 +11,12 @@ TEST_LAST_HASH_PATH = os.path.join(settings.BASE_DIR, 'tests/test_data/last_hash
 
 class TestScript(unittest.TestCase):
 
+    def tearDown(self):
+        try:
+            os.remove(TEST_LAST_HASH_PATH)
+        except Exception:
+            pass
+
     def test_add_to_list_voting_exist(self):
         api = mock.MagicMock()
         list_hash = mock.Mock()
@@ -139,3 +145,42 @@ class TestScript(unittest.TestCase):
         with open(TEST_LAST_HASH_PATH, 'r') as f:
             self.assertEqual(f.read(), 'test')
         os.remove(TEST_LAST_HASH_PATH)
+
+    @mock.patch('service.settings.LAST_HASH_PATH', TEST_LAST_HASH_PATH)
+    @mock.patch('re.sub')
+    @mock.patch('service.get_list.get_current_list_or_create_new')
+    @mock.patch('tempfile.NamedTemporaryFile')
+    @mock.patch('json.dumps')
+    @mock.patch('service.crypto_utils.sign_data')
+    def test_get_list_with_hash_from_file(self, sign, dumps, tempfile, get_list, sub):
+        """
+        Check using hash from LAST_HASH_PATH file
+        """
+        api = mock.MagicMock()
+        api.object_put.return_value.__getitem__.return_value = 'test_hash_1'
+        bulletin = mock.Mock()
+        sub.return_value = mock.Mock()
+        get_list.return_value = dict(Data="List of bulletins", Links=[])
+        with open(TEST_LAST_HASH_PATH, 'w') as f:
+            f.write('test_hash_2')
+        add_to_list(api, bulletin)
+        get_list.assert_called_once_with(api, 'test_hash_2')
+
+    @mock.patch('service.settings.LAST_HASH_PATH', TEST_LAST_HASH_PATH)
+    @mock.patch('re.sub')
+    @mock.patch('service.get_list.get_current_list_or_create_new')
+    @mock.patch('tempfile.NamedTemporaryFile')
+    @mock.patch('json.dumps')
+    @mock.patch('service.crypto_utils.sign_data')
+    def test_get_list_with_hash_from_name_resolve(self, sign, dumps, tempfile, get_list, sub):
+        """
+        Check gettings hash from name_resolve, when LAST_HASH_PATH doesn't exist
+        """
+
+        api = mock.MagicMock()
+        api.object_put.return_value.__getitem__.return_value = 'test_hash_3'
+        bulletin = mock.Mock()
+        sub.return_value = mock.Mock()
+        get_list.return_value = dict(Data="List of bulletins", Links=[])
+        add_to_list(api, bulletin)
+        get_list.assert_called_once_with(api, sub.return_value)

@@ -27,7 +27,7 @@ import (
 
 const (
     protocolAddress = "/42coffeecupfs/e-proxy-voting"
-    shellUrl        = "localhost:5001"
+    shellUrl        = "localhost:5501"
     encoding        = "json"
 )
 

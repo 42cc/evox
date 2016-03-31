@@ -27,7 +27,7 @@ def check_previous(api, last_used, new_list):
 
 
 def main():
-    api = ipfsApi.Client()
+    api = ipfsApi.Client('127.0.0.1', 5401)
     last_pined_list = None
     while True:
         with open(LAST_HASH_PATH, 'r') as f:

@@ -9,7 +9,7 @@ import settings
 
 class VotingResultCalculator:
     def __init__(self, voters_file):
-        self.api = ipfsApi.Client('127.0.0.1', 5001)
+        self.api = ipfsApi.Client('127.0.0.1', 5401)
         self.voters = {}
         self.delegations = {}
         self.users_delegated = set()
