@@ -1,25 +1,25 @@
 package main
 
 import (
-    "fmt"
-    "strings"
-    "encoding/json"
-    "encoding/pem"
-    "encoding/base64"
-    "regexp"
-    "time"
-    "io/ioutil"
-    "os/exec"
     "bytes"
     "crypto"
     "crypto/rsa"
     "crypto/sha1"
     "crypto/x509"
+    "encoding/base64"
+    "encoding/json"
+    "encoding/pem"
+    "fmt"
+    "io/ioutil"
+    "os/exec"
+    "regexp"
+    "strings"
+    "time"
 
+    httpApi "github.com/ipfs/go-ipfs-api"
     core "github.com/ipfs/go-ipfs/core"
     corenet "github.com/ipfs/go-ipfs/core/corenet"
     fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
-    httpApi "github.com/42cc/go-ipfs-api"
 
     "github.com/golang-samples/revel/src/code.google.com/p/go.net/context"
 )
@@ -41,16 +41,16 @@ type IpfsObject struct {
 }
 
 type Bulletin struct {
-    Voting string `json:"voting"`
-    Vote string `json:"vote"`
-    Voter string `json:"voter"`
-    Datetime string `json:"datetime"`
+    Voting    string `json:"voting"`
+    Vote      string `json:"vote"`
+    Voter     string `json:"voter"`
+    Datetime  string `json:"datetime"`
     PublicKey string `json:"publickey"`
 }
 
 type SignedBulletin struct {
-    Bulletin Bulletin `json:"bulletin"`
-    Signature string  `json:"signature"`
+    Bulletin  Bulletin `json:"bulletin"`
+    Signature string   `json:"signature"`
 }
 
 func GetKey(filename string) string {
@@ -63,9 +63,9 @@ func GetKey(filename string) string {
 
 func DataStr2JSON(bulletin string) string {
     r := strings.NewReplacer(
-            `"data":"{`, `"data":{`,
-            `\"`, `"`,
-            `}","links"`, `},"links"`)
+        `"Data":"{`, `"Data":{`,
+        `\"`, `"`,
+        `}"}`, `}}`)
     bulletinJSON := r.Replace(bulletin)
     return bulletinJSON
 }
@@ -184,7 +184,7 @@ func CheckSignature(bulletinObj *IpfsObject) (bool, string) {
         return false, err.Error()
     }
     pubKey := strings.Replace(bulletinObj.Data.Bulletin.PublicKey, "_", "\n", -1)
- 
+
     // Parse public key into rsa.PublicKey
     PEMBlock, _ := pem.Decode([]byte(pubKey))
     if PEMBlock == nil {
@@ -210,6 +210,17 @@ func CheckSignature(bulletinObj *IpfsObject) (bool, string) {
 
     // It verified!
     return true, ""
+}
+
+func get_bulletin_from_ipfs(hash string) *httpApi.IpfsObject {
+    // get bulletin from ipfs
+    s := httpApi.NewShell(shellUrl)
+    bulletinObj, err := s.ObjectGet(hash)
+    if err != nil {
+        return get_bulletin_from_ipfs(hash)
+    } else {
+        return bulletinObj
+    }
 }
 
 func main() {
@@ -259,12 +270,14 @@ func main() {
             fmt.Println(err)
         }
 
-        // get bulletin from ipfs
-        s := httpApi.NewShell(shellUrl)
-        bulletinStr, err := s.GetObject(clientData.Hash)
+        bulletinObj := get_bulletin_from_ipfs(clientData.Hash)
+
+        // parse object to string
+        bulletinJson, err := json.Marshal(bulletinObj)
         if err != nil {
             fmt.Println(err)
         }
+        bulletinStr := string(bulletinJson)
 
         // CREATE BULLETIN OBJECT FROM BULLETIN STR
         bulletinIpfsJSON := DataStr2JSON(bulletinStr)
@@ -300,7 +313,7 @@ func main() {
             err := cmd.Run()
             // return output to client
             if err != nil {
-                fmt.Fprintln(con, fmt.Sprint(err) + ": " + stderr.String())
+                fmt.Fprintln(con, fmt.Sprint(err)+": "+stderr.String())
             } else {
                 fmt.Fprintln(con, out.String())
             }

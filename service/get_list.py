@@ -23,7 +23,9 @@ def parse_arguments(argv):
 
 
 def get_current_list_or_create_new(api, list_hash):
-    data = api.object_get(list_hash)
+    data = None
+    if list_hash:
+        data = api.object_get(list_hash)
     if data and data.get('Data') and "List of bulletins" in data['Data']:
         return data
     return dict(Data="List of bulletins", Links=[])

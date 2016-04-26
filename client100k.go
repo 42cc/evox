@@ -1,26 +1,25 @@
 package main
 
 import (
-    "fmt"
-    "io/ioutil"
-    "os"
-    "time"
-    "bytes"
-    "strings"
-    "encoding/json"
-    "encoding/pem"
-    "encoding/base64"
     "crypto"
     "crypto/rand"
     "crypto/rsa"
     "crypto/sha1"
     "crypto/x509"
+    "encoding/base64"
+    "encoding/json"
+    "encoding/pem"
+    "fmt"
+    "io/ioutil"
+    "os"
+    "strings"
+    "time"
 
+    httpApi "github.com/ipfs/go-ipfs-api"
     core "github.com/ipfs/go-ipfs/core"
     corenet "github.com/ipfs/go-ipfs/core/corenet"
-    peer "gx/ipfs/QmUBogf4nUefBjmYjn6jfsfPJRkmDGSeMhNj4usRKq69f4/go-libp2p/p2p/peer"
     fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
-    httpApi "github.com/42cc/go-ipfs-api"
+    peer "gx/ipfs/QmZwZjMVGss5rqYsJVGy18gNbkTJffFyq2x1uJ4e4p3ZAt/go-libp2p-peer"
 
     "github.com/golang-samples/revel/src/code.google.com/p/go.net/context"
 )
@@ -28,44 +27,34 @@ import (
 const (
     protocolAddress = "/42coffeecupfs/e-proxy-voting"
     shellUrl        = "localhost:5501"
-    encoding        = "json"
 )
 
-type IpfsObject struct {
-    Data string
-}
-
 type Bulletin struct {
-    Voting string `json:"voting"`
-    Vote string `json:"vote"`
-    Voter string `json:"voter"`
-    Datetime string `json:"datetime"`
+    Voting    string `json:"voting"`
+    Vote      string `json:"vote"`
+    Voter     string `json:"voter"`
+    Datetime  string `json:"datetime"`
     PublicKey string `json:"publickey"`
 }
 
 type SignedBulletin struct {
-    Bulletin Bulletin `json:"bulletin"`
-    Signature string  `json:"signature"`
+    Bulletin  Bulletin `json:"bulletin"`
+    Signature string   `json:"signature"`
 }
 
 // create ipfs object without links
-func CreateIpfsObjectJson(data string) string {
-    ipfsObject := IpfsObject{Data: data}
-
-    ipfsObjectJson, err := json.Marshal(ipfsObject)
-    if err != nil {
-        panic(err)
-    } 
-    return string(ipfsObjectJson)
-} 
+func CreateIpfsObject(data string) *httpApi.IpfsObject {
+    obj := &httpApi.IpfsObject{Data: data}
+    return obj
+}
 
 func CreateBulletin(votingHash, voteHash, voterHash, nameOfPubKey string) Bulletin {
     pubKey := strings.Replace(GetKey(nameOfPubKey), "\n", "_", -1) // replace all line breaks on the spaces
     bulletinObj := Bulletin{
-        Voting: votingHash,
-        Vote: voteHash,
-        Voter: voterHash,
-        Datetime: time.Now().Format("2006-02-01T15:04:05.000Z"),
+        Voting:    votingHash,
+        Vote:      voteHash,
+        Voter:     voterHash,
+        Datetime:  time.Now().Format("2006-02-01T15:04:05.000Z"),
         PublicKey: pubKey,
     }
     return bulletinObj
@@ -75,14 +64,14 @@ func CreateSignedBulletin(bulletin Bulletin, privKeyPEM string) string {
     bulletinJson, err := json.Marshal(bulletin)
     if err != nil {
         panic(err)
-    } 
+    }
     signature := base64.StdEncoding.EncodeToString(JSONSign(string(bulletinJson), privKeyPEM))
 
     signedBulletinObj := SignedBulletin{bulletin, signature}
     signedBulletinJson, err := json.Marshal(signedBulletinObj)
     if err != nil {
         panic(err)
-    } 
+    }
     return string(signedBulletinJson)
 }
 
@@ -183,19 +172,20 @@ func main() {
     for i := 1; i <= 100000; i++ {
         fmt.Println("Connection with host, number: ", i)
         connectionWithHost(votingHash, voteHash, voterHash, nameOfPubKey,
-                           nameOfPrivKey, nd, target)
+            nameOfPrivKey, nd, target)
     }
 }
 
 func connectionWithHost(votingHash, voteHash, voterHash, nameOfPubKey,
-                        nameOfPrivKey string, nd *core.IpfsNode, target peer.ID) {
+    nameOfPrivKey string, nd *core.IpfsNode, target peer.ID) {
+
     bulletin := CreateBulletin(votingHash, voteHash, voterHash, nameOfPubKey)
     signedBulletin := CreateSignedBulletin(bulletin, GetKey(nameOfPrivKey))
-    ipfsObjectJSON := CreateIpfsObjectJson(signedBulletin)
- 
+    ipfsObject := CreateIpfsObject(signedBulletin)
+
     // save bulletin to ipfs
     s := httpApi.NewShell(shellUrl)
-    hash, err := s.PutObject(encoding, bytes.NewBufferString(ipfsObjectJSON))
+    hash, err := s.ObjectPut(ipfsObject)
     if err != nil {
         panic(err)
     }
