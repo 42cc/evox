@@ -111,6 +111,20 @@ func JSONSign(data, privKeyPEM string) []byte {
     return signature
 }
 
+func IsBulletinInList(bulletins_list *httpApi.IpfsObject, hash string) bool {
+    // if it`s list of bulletins
+    if strings.Contains(bulletins_list.Data, "List of bulletins") {
+        bulletins_links, err := json.Marshal(bulletins_list.Links)
+        if err != nil {
+            fmt.Println(err)
+        }
+        if strings.Contains(string(bulletins_links), hash) {
+            return true
+        }
+    }
+    return false
+}
+
 func main() {
     if len(os.Args) < 2 {
         fmt.Println("Please give a peer ID as an argument")
@@ -187,19 +201,35 @@ func main() {
         return
     }
     fmt.Fprintln(con, dataForHost) // send hash of bulletin to the server
-
-    // get data from response
-    buf := make([]byte, 256)
-    n, err := con.Read(buf)
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-
-    // show data and close script
-    response := string(buf[:n])
-    if response != "" {
-        fmt.Println(response)
-        return
+    // loop for get data from server
+    for {
+        // get data from response
+        buf := make([]byte, 46)
+        n, err := con.Read(buf)
+        if err != nil {
+            fmt.Println(err)
+            break
+        }
+        response := string(buf[:n])
+        // ckeck if get hash or error
+        if len(response) > 1 {
+            bulletins_list, err := s.ObjectGet(response)
+            if err == nil {
+                // if get bulletins list with our bulletin then show hash and close client
+                if IsBulletinInList(bulletins_list, hash) {
+                    fmt.Println(response)
+                    break
+                }
+            } else {
+                // create buffer with more bytes that show all data from server
+                buf := make([]byte, 2048)
+                n, err := con.Read(buf)
+                if err != nil {
+                    fmt.Println(err)
+                }
+                fmt.Println("ERROR: ", string(buf[:n]))
+                break
+            }
+        }
     }
 }

@@ -7,6 +7,8 @@ import (
     "testing"
     "time"
 
+    httpApi "github.com/ipfs/go-ipfs-api"
+
     "../client"
 )
 
@@ -26,6 +28,7 @@ fWM5cIJ9bAUExKB6MV8PF+9EjDvXzbSk1/Ycta8z
     pubKeyPEM         = "test_data/pubkeys/key.pub"
     examplesSignature = `T0EiVgKu8dKN3aSZ503LMvucb67dbkqJ9VHLCzYeF` +
         `3RgTa3u1PDa480PdZlZcmXwy/0PbLkekSg/e/PYNVXJLQ==`
+    bulletins_list = `{"Data":"{\"signature\": \"blablabla=\",\"data\":\"List of bulletins\"}","Links":[{"Hash":"QmNgYn9TKW7X1roE5tmbGb7tcUCfT4wA8fJttRYsG6SVP3","Name":"","Size":0},{"Hash":"Qmadzj1s8G5a1QkCehucuLuxdNVG8bopRXshdTeGU1SmAg","Name":"","Size":0},{"Hash":"QscSce1TKW7X1roE5tmbGb7tcUCfT4wA8fJttRYsG6SVP3","Name":"","Size":0},{"Hash":"Q123Yn9TKW7X1roE5tmbGb7tcUCfT4wA8fJttRYsG6SVP3","Name":"","Size":0}]}`
 )
 
 func TestCreateIpfsObject(t *testing.T) {
@@ -85,5 +88,36 @@ func TestSignature(t *testing.T) {
     if !reflect.DeepEqual(expected, actual) {
         t.Errorf("Not equal\nexpected = %v\nactual = %v", expected, actual)
     }
+}
 
+func TestIsBulletinInListRight(t *testing.T) {
+    bulletin_hash := "QmNgYn9TKW7X1roE5tmbGb7tcUCfT4wA8fJttRYsG6SVP3"
+    expected := true
+
+    bulletins_list_obj := &httpApi.IpfsObject{}
+    err := json.Unmarshal([]byte(bulletins_list), &bulletins_list_obj)
+    if err != nil {
+        panic(err)
+    }
+
+    actual := main.IsBulletinInList(bulletins_list_obj, bulletin_hash)
+    if !reflect.DeepEqual(expected, actual) {
+        t.Errorf("Not equal\nexpected = %v\nactual = %v", expected, actual)
+    }
+}
+
+func TestIsBulletinInListFail(t *testing.T) {
+    bulletin_hash := "Q4321n9TKW7X1roE5tmbGb7tcUCfT4wA8fJttRYsG6SVP3"
+    expected := false
+
+    bulletins_list_obj := &httpApi.IpfsObject{}
+    err := json.Unmarshal([]byte(bulletins_list), &bulletins_list_obj)
+    if err != nil {
+        panic(err)
+    }
+
+    actual := main.IsBulletinInList(bulletins_list_obj, bulletin_hash)
+    if !reflect.DeepEqual(expected, actual) {
+        t.Errorf("Not equal\nexpected = %v\nactual = %v", expected, actual)
+    }
 }

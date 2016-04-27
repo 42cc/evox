@@ -63,9 +63,11 @@ func GetKey(filename string) string {
 
 func DataStr2JSON(bulletin string) string {
     r := strings.NewReplacer(
+        `"data":"{`, `"data":{`,
         `"Data":"{`, `"Data":{`,
         `\"`, `"`,
-        `}"}`, `}}`)
+        `}"}`, `}}`,
+        `}","links"`, `},"links"`)
     bulletinJSON := r.Replace(bulletin)
     return bulletinJSON
 }
